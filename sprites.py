@@ -4,7 +4,7 @@
 
 import pygame as pg
 from pygame.sprite import Sprite
-from chakraborty_heavens_last_stand.settings import *
+from settings import *
 from random import randint
 vec = pg.math.Vector2
 
@@ -14,16 +14,18 @@ class Player(Sprite):
         self.groups = game.all_sprites
         Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = pg.Surface(TILESIZE)
-        self.image.fill(GREEN)
-        self.rect = self.image.get_rect(topleft=(x*TILESIZE[0], y*TILESIZE[1]))
-        # use float pos for smooth movement and robust collisions
+        self.image = game.player_img
+        self.image_inv = game.player_img_inv
+
+        # Proper spawn placement
+        self.rect = self.image.get_rect(topleft=(x * TILESIZE[0], y * TILESIZE[1]))
         self.pos = vec(self.rect.topleft)
+
         self.vel = vec(0,0)
         self.speed = 250
         self.coins = 0
         self.health = 100
-        # facing direction for projectiles; default to right
+
         self.dir = vec(1,0)
         self.last_shot = 0
         self.shot_cooldown = 300
@@ -32,10 +34,10 @@ class Player(Sprite):
         # compute desired velocity from input (frame-rate independent via dt)
         keys = pg.key.get_pressed()
         self.vel = vec(0,0)
-        if keys[pg.K_w]: self.vel.y = -self.speed * self.game.dt
-        if keys[pg.K_s]: self.vel.y = self.speed * self.game.dt
-        if keys[pg.K_a]: self.vel.x = -self.speed * self.game.dt
-        if keys[pg.K_d]: self.vel.x = self.speed * self.game.dt
+        if keys[pg.K_w]: self.vel.y = -self.speed 
+        if keys[pg.K_s]: self.vel.y = self.speed 
+        if keys[pg.K_a]: self.vel.x = -self.speed
+        if keys[pg.K_d]: self.vel.x = self.speed
 
         # update facing direction only when there's an input direction
         if self.vel.length_squared() > 0:
@@ -50,6 +52,7 @@ class Player(Sprite):
     def update(self):
         # get input
         self.get_keys()
+
 
         # --- axis-separated movement & collision (prevents snapping) ---
 
