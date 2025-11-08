@@ -8,9 +8,9 @@
 # why? what? how?
 
 import pygame as pg
-from chakraborty_heavens_last_stand.settings import *
-from chakraborty_heavens_last_stand.sprites import *
-from chakraborty_heavens_last_stand.tilemap import Map
+from settings import *
+from sprites import *
+from tilemap import Map
 from os import path
 
 class Game:
@@ -20,7 +20,13 @@ class Game:
         pg.display.set_caption("Ryan's Game")
         self.clock = pg.time.Clock()
         self.playing = True
+    def load_data(self):
+        self.game_folder = path.dirname(__file__)
+        self.img_folder = path.join(self.game_folder, 'images')
         self.map = Map(path.join(path.dirname(__file__), "level1.txt"))
+        # loads image into memory when a new game is created and load_data is called
+        self.player_img = pg.image.load(path.join(self.img_folder, 'kratos.png')).convert_alpha()
+        self.player_img_inv = pg.image.load(path.join(self.img_folder, 'kratos.png')).convert_alpha()
 
     def new(self):
         self.all_sprites = pg.sprite.Group()
@@ -71,6 +77,7 @@ class Game:
 
 if __name__ == "__main__":
     g = Game()
+    g.load_data
     g.new()
     g.run()
      
