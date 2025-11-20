@@ -4,6 +4,8 @@ from sprites import *
 from tilemap import Map
 from os import path
 
+
+# test comment
 class Game:
     def __init__(self):
         pg.init()  # Initialize Pygame
