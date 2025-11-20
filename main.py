@@ -6,6 +6,7 @@ from os import path
 
 
 # test comment
+# second test comment
 class Game:
     def __init__(self):
         pg.init()  # Initialize Pygame
