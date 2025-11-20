@@ -39,42 +39,41 @@ class Player(Sprite):
     def update(self):
         self.get_keys()
 
-        # Horizontal
+        # --- Horizontal movement ---
         self.pos.x += self.vel.x * getattr(self.game, 'dt', 1)
         self.rect.x = int(self.pos.x)
-        for wall in pg.sprite.spritecollide(self, getattr(self.game, 'all_walls', pg.sprite.Group()), False):
-            if self.vel.x > 0: self.rect.right = wall.rect.left
-            if self.vel.x < 0: self.rect.left = wall.rect.right
-            self.pos.x = self.rect.x
-            self.vel.x = 0
 
-        # Vertical
+        # Walls + closed doors collision (act as walls if no key)
+        for wall in list(self.game.all_walls) + [d for d in self.game.all_doors if not self.has_key]:
+            if self.rect.colliderect(wall.rect):
+                if self.vel.x > 0: self.rect.right = wall.rect.left
+                if self.vel.x < 0: self.rect.left = wall.rect.right
+                self.pos.x = self.rect.x
+                self.vel.x = 0
+
+        # --- Vertical movement ---
         self.pos.y += self.vel.y * getattr(self.game, 'dt', 1)
         self.rect.y = int(self.pos.y)
-        for wall in pg.sprite.spritecollide(self, getattr(self.game, 'all_walls', pg.sprite.Group()), False):
-            if self.vel.y > 0: self.rect.bottom = wall.rect.top
-            if self.vel.y < 0: self.rect.top = wall.rect.bottom
-            self.pos.y = self.rect.y
-            self.vel.y = 0
 
-        # Coin pickup
-        coins = getattr(self.game, 'all_coins', None)
-        if coins:
-            hits = pg.sprite.spritecollide(self, coins, True)
-            if hits: self.coins += len(hits)
+        for wall in list(self.game.all_walls) + [d for d in self.game.all_doors if not self.has_key]:
+            if self.rect.colliderect(wall.rect):
+                if self.vel.y > 0: self.rect.bottom = wall.rect.top
+                if self.vel.y < 0: self.rect.top = wall.rect.bottom
+                self.pos.y = self.rect.y
+                self.vel.y = 0
 
-        # Key pickup
-        keys = getattr(self.game, 'all_keys', None)
-        if keys:
-            hits = pg.sprite.spritecollide(self, keys, True)
-            if hits: self.has_key = True
+        # --- Coin pickup ---
+        hits = pg.sprite.spritecollide(self, self.game.all_coins, True)
+        if hits: self.coins += len(hits)
 
-        # Door interaction
-        doors = getattr(self.game, 'all_doors', None)
-        if doors:
-            for door in pg.sprite.spritecollide(self, doors, False):
-                if self.has_key:
-                    door.kill()  # open door
+        # --- Key pickup ---
+        hits = pg.sprite.spritecollide(self, self.game.all_keys, True)
+        if hits: self.has_key = True
+
+        # --- Open doors if player has key ---
+        for door in pg.sprite.spritecollide(self, self.game.all_doors, False):
+            if self.has_key:
+                door.kill()  # remove door
 
         # Clamp health
         self.health = max(0, min(self.health, 100))
@@ -99,7 +98,7 @@ class Mob(Sprite):
 
     def update(self):
         # chase player
-        if hasattr(self.game, 'player') and self.game.player:
+        if self.game.player:
             direction = self.game.player.pos - self.pos
             distance = direction.length()
             if 0 < distance <= self.radius:
@@ -112,28 +111,29 @@ class Mob(Sprite):
         # Horizontal
         self.pos.x += self.vel.x
         self.rect.x = int(self.pos.x)
-        for wall in pg.sprite.spritecollide(self, getattr(self.game, 'all_walls', pg.sprite.Group()), False):
-            if self.vel.x > 0: self.rect.right = wall.rect.left
-            if self.vel.x < 0: self.rect.left = wall.rect.right
-            self.pos.x = self.rect.x
-            self.vel.x = 0
+        for wall in list(self.game.all_walls):
+            if self.rect.colliderect(wall.rect):
+                if self.vel.x > 0: self.rect.right = wall.rect.left
+                if self.vel.x < 0: self.rect.left = wall.rect.right
+                self.pos.x = self.rect.x
+                self.vel.x = 0
 
         # Vertical
         self.pos.y += self.vel.y
         self.rect.y = int(self.pos.y)
-        for wall in pg.sprite.spritecollide(self, getattr(self.game, 'all_walls', pg.sprite.Group()), False):
-            if self.vel.y > 0: self.rect.bottom = wall.rect.top
-            if self.vel.y < 0: self.rect.top = wall.rect.bottom
-            self.pos.y = self.rect.y
-            self.vel.y = 0
+        for wall in list(self.game.all_walls):
+            if self.rect.colliderect(wall.rect):
+                if self.vel.y > 0: self.rect.bottom = wall.rect.top
+                if self.vel.y < 0: self.rect.top = wall.rect.bottom
+                self.pos.y = self.rect.y
+                self.vel.y = 0
 
         # Damage player
-        if hasattr(self.game, 'player') and self.game.player:
-            if self.rect.colliderect(self.game.player.rect):
-                now = pg.time.get_ticks()
-                if now - self.last_damage_time >= self.damage_cooldown:
-                    self.last_damage_time = now
-                    self.game.player.health -= 10
+        if self.game.player and self.rect.colliderect(self.game.player.rect):
+            now = pg.time.get_ticks()
+            if now - self.last_damage_time >= self.damage_cooldown:
+                self.last_damage_time = now
+                self.game.player.health -= 10
 
         # Die -> drop coin or key
         if self.health <= 0:
@@ -218,5 +218,3 @@ class Projectile(Sprite):
         # off-screen
         if not self.game.screen.get_rect().collidepoint(self.rect.center):
             self.kill()
-
-
