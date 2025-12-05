@@ -1,3 +1,5 @@
+# Goals for Beta
+# Create Bosses, Transition Levels, and a Mini Map
 import pygame as pg
 from settings import *
 from sprites import *
