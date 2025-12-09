@@ -20,7 +20,9 @@ class Game:
         self.map = Map(path.join(self.game_folder, "level1.txt"))
 
         self.player_img = pg.image.load(path.join(self.img_folder, 'kratos.png')).convert_alpha()
+        self.mob_img = pg.image.load(path.join(self.img_folder, 'kratos.png')).convert_alpha()
         self.player_img_inv = pg.image.load(path.join(self.img_folder, 'kratos.png')).convert_alpha()
+        self.mob_img_inv = pg.image.load(path.join(self.img_folder, 'kratos.png')).convert_alpha()
         self.bg_img = pg.image.load(path.join(self.img_folder, 'background.png')).convert_alpha()
         self.bg_img = pg.transform.scale(self.bg_img, (WIDTH, HEIGHT))
 
@@ -43,7 +45,6 @@ class Game:
                 elif tile.upper() == "M": Mob(self, col, row, drops_key=True if len(self.all_mobs) == 0 else False)
                 elif tile.upper() == "D": Door(self, col, row)
 
-# Used Value Error from Source W3 Schools --> https://www.w3schools.com/python/ref_exception_valueerror.asp
         if self.player is None:
             raise ValueError("Map must have a 'P' tile for the player!")
 
@@ -67,27 +68,32 @@ class Game:
         health = max(0, min(health, 100))
         fill_width = int((health / 100) * width)
         pg.draw.rect(surface, (0, 255, 0), (x, y, fill_width, height))
-        pg.draw.rect(surface, (255, 255, 255), (x, y, width, height), 2)
+        pg.draw.rect(surface, WHITE, (x, y, width, height), 2)
 
-    # ------------------ INVENTORY SPACE ------------------ #
+    # ------------------ STAMINA BAR ------------------ #
+    def draw_stamina_bar(self, surface, x, y, stamina, max_stamina):
+        width = 200
+        height = 20
+        stamina = max(0, min(stamina, max_stamina))
+        fill_width = int((stamina / max_stamina) * width)
+        pg.draw.rect(surface, (0, 0, 255), (x, y, fill_width, height))
+        pg.draw.rect(surface, WHITE, (x, y, width, height), 2)
+
+    # ------------------ INVENTORY ------------------ #
     def draw_inventory(self, surface):
-        """Draws the player's inventory at the bottom of the screen."""
         inventory_height = 50
         inventory_y = self.screen.get_height() - inventory_height
         inventory_color = (50, 50, 50)
 
-        # Background and border
         pg.draw.rect(surface, inventory_color, (0, inventory_y, self.screen.get_width(), inventory_height))
         pg.draw.rect(surface, WHITE, (0, inventory_y, self.screen.get_width(), inventory_height), 2)
 
-        # Coins and Keys in Inventory Space created through help of Chat GPT
-        # Prompt - How to update amount of coins/keys in my inventory everytime I collect an item in pygame?
         # Coins
         coin_icon_rect = pg.Rect(20, inventory_y + 10, 30, 30)
         pg.draw.ellipse(surface, YELLOW, coin_icon_rect)
         self.draw_text(surface, f"x {self.player.coins}", 24, WHITE, coin_icon_rect.right + 10, inventory_y + 10)
 
-        # Key
+        # Keys
         key_icon_rect = pg.Rect(150, inventory_y + 10, 30, 30)
         pg.draw.rect(surface, (0, 200, 255), key_icon_rect)
         key_count = 1 if self.player.has_key else 0
@@ -97,23 +103,31 @@ class Game:
     def draw(self):
         self.screen.blit(self.bg_img, (0, 0))
 
-        # Draw mob detection radius for debugging
+        # Draw mob detection radius
         for mob in self.all_mobs:
             mob.draw_radius(self.screen)
 
-        # Draw all sprites
         self.all_sprites.draw(self.screen)
 
-        # Draw health bar and other info
+        # HUD
         if self.player:
             bar_y = self.screen.get_height() - 70
+
+            # Health bar
             self.draw_health_bar(self.screen, 20, bar_y, self.player.health)
+            self.draw_text(self.screen, "HP", 20, WHITE, 20, bar_y - 20)
+
+            # Stamina bar
+            self.draw_stamina_bar(self.screen, 240, bar_y, self.player.stamina, self.player.max_stamina)
+            self.draw_text(self.screen, "STA", 20, WHITE, 240, bar_y - 20)
+
+            # Additional info
             self.draw_text(self.screen, f"{int(self.player.health)}", 24, BLACK, 230, bar_y - 2)
             self.draw_text(self.screen, f"Coins: {self.player.coins}", 24, BLACK, 300, 20)
             if self.player.has_key:
                 self.draw_text(self.screen, "Key Acquired", 24, YELLOW, 500, 20)
 
-            # Draw inventory HUD
+            # Inventory
             self.draw_inventory(self.screen)
 
         pg.display.flip()
