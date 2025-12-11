@@ -230,13 +230,14 @@ class Key(Sprite):
 
 # ------------------ DOOR ------------------ #
 class Door(Sprite):
-    def __init__(self, game, x, y):
+    def __init__(self, game, x, y, target_level="level2.txt"):  # Add target_level parameter
         self.groups = game.all_sprites, game.all_doors
         Sprite.__init__(self, self.groups)
+        self.rect = pg.Rect(x*TILESIZE[0], y*TILESIZE[1], TILESIZE[0], TILESIZE[1])
+        self.target_level = target_level  # The map this door will load
         self.image = pg.Surface(TILESIZE)
         self.image.fill((139,69,19))
-        self.rect = self.image.get_rect(topleft=(x*TILESIZE[0], y*TILESIZE[1]))
-
+        
 # ------------------ WALL ------------------ #
 class Wall(Sprite):
     def __init__(self, game, x, y):

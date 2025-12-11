@@ -20,12 +20,15 @@ class Game:
         # Mini-map toggle
         self.show_full_map = False
 
+        # Current level file
+        self.current_level = "level1.txt"
+
     # ------------------ LOAD DATA ------------------ #
     def load_data(self):
         # --- Loads images, map, and sets file paths ---
         self.game_folder = path.dirname(__file__)
         self.img_folder = path.join(self.game_folder, 'images')
-        self.map = Map(path.join(self.game_folder, "level1.txt"))
+        self.map = Map(path.join(self.game_folder, self.current_level))
 
         # Player graphics
         self.player_img = pg.image.load(path.join(self.img_folder, 'kratos.png')).convert_alpha()
@@ -130,6 +133,21 @@ class Game:
         # Prevent running the game without placing player
         if self.player is None:
             raise ValueError("Map must have a 'P' tile for the player!")
+
+    # ------------------ CHANGE LEVEL ------------------ #
+    def change_level(self, new_level, spawn_tile='P'):
+        """Switch to a new map and place player at the spawn tile."""
+        self.current_level = new_level
+        self.map = Map(path.join(self.game_folder, self.current_level))
+        self.new()  # rebuild the sprites
+
+        # Place player at spawn tile
+        for row, line in enumerate(self.map.data):
+            for col, tile in enumerate(line):
+                if tile.upper() == spawn_tile:
+                    self.player.rect.topleft = (col * TILESIZE[0], row * TILESIZE[1])
+                    self.player.pos = pg.math.Vector2(self.player.rect.topleft)
+                    return
 
     # ------------------ MAIN GAME LOOP ------------------ #
     def run(self):
@@ -283,3 +301,4 @@ if __name__ == "__main__":
     g.load_data()
     g.new()
     g.run()
+
