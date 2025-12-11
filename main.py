@@ -25,40 +25,32 @@ class Game:
 
     # ------------------ LOAD DATA ------------------ #
     def load_data(self):
-        # --- Loads images, map, and sets file paths ---
         self.game_folder = path.dirname(__file__)
         self.img_folder = path.join(self.game_folder, 'images')
         self.map = Map(path.join(self.game_folder, self.current_level))
 
-        # Player graphics
         self.player_img = pg.image.load(path.join(self.img_folder, 'kratos.png')).convert_alpha()
         self.player_img_inv = pg.image.load(path.join(self.img_folder, 'kratos.png')).convert_alpha()
 
-        # Background image
         self.bg_img = pg.image.load(path.join(self.img_folder, 'background.png')).convert_alpha()
         self.bg_img = pg.transform.scale(self.bg_img, (WIDTH, HEIGHT))
 
     # ------------------ START SCREEN ------------------ #
     def show_start_screen(self):
-        """Displays the start menu where the player can Start, view Credits, or Quit."""
         waiting = True
-        selected = 0  # Menu index: 0 = Start, 1 = Credits, 2 = Quit
+        selected = 0  
         options = ["Start Game", "Credits", "Quit"]
 
         while waiting:
             self.screen.fill((0, 0, 0))
-
-            # Title Text
             self.draw_text(self.screen, "Heaven's Last Stand", 64, WHITE, WIDTH // 2 - 220, HEIGHT // 4)
 
-            # Loop through menu options
             for i, option in enumerate(options):
                 color = YELLOW if i == selected else WHITE
                 self.draw_text(self.screen, option, 40, color, WIDTH // 2 - 100, HEIGHT // 2 + i * 60)
 
             pg.display.flip()
 
-            # Event handling
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     pg.quit()
@@ -69,29 +61,23 @@ class Game:
                     if event.key == pg.K_DOWN:
                         selected = (selected + 1) % len(options)
                     if event.key == pg.K_RETURN:
-                        if selected == 0:   # Start Game
+                        if selected == 0:
                             waiting = False
-                        elif selected == 1:  # Credits
+                        elif selected == 1:
                             self.show_credits_screen()
-                        elif selected == 2:  # Quit
+                        elif selected == 2:
                             pg.quit()
                             quit()
 
     # ------------------ CREDITS SCREEN ------------------ #
     def show_credits_screen(self):
-        """Displays a simple credits screen and returns to the start menu."""
         waiting = True
 
         while waiting:
             self.screen.fill(BLACK)
-
-            # Credits text
             self.draw_text(self.screen, "CREDITS", 60, WHITE, WIDTH // 2 - 140, HEIGHT // 4)
             self.draw_text(self.screen, "Thanks to Ryan C", 40, YELLOW, WIDTH // 2 - 180, HEIGHT // 2)
-
-            # Return instructions
             self.draw_text(self.screen, "Press any key to return", 30, GREY, WIDTH // 2 - 180, HEIGHT - 100)
-
             pg.display.flip()
 
             for event in pg.event.get():
@@ -101,9 +87,32 @@ class Game:
                 if event.type == pg.KEYDOWN:
                     waiting = False
 
+    # ------------------ SIMPLE DEATH SCREEN ------------------ #
+    def show_death_screen(self):
+        """Simple black death screen with retry."""
+        while True:
+            self.screen.fill((0, 0, 0))
+
+            self.draw_text(self.screen, "YOU DIED", 80, RED, WIDTH // 2 - 180, HEIGHT // 3)
+            self.draw_text(self.screen, "Press R to Retry", 40, WHITE, WIDTH // 2 - 150, HEIGHT // 2)
+            self.draw_text(self.screen, "Press Q to Quit", 40, WHITE, WIDTH // 2 - 150, HEIGHT // 2 + 60)
+
+            pg.display.flip()
+
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    pg.quit()
+                    quit()
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_r:
+                        self.change_level(self.current_level)
+                        return
+                    if event.key == pg.K_q:
+                        pg.quit()
+                        quit()
+
     # ------------------ NEW LEVEL ------------------ #
     def new(self):
-        # --- Create all sprite groups for the level ---
         self.all_sprites = pg.sprite.Group()
         self.all_mobs = pg.sprite.Group()
         self.all_coins = pg.sprite.Group()
@@ -114,11 +123,9 @@ class Game:
 
         self.player = None
 
-        # --- Build the world from map.txt ---
         for row, tiles in enumerate(self.map.data):
             for col, tile in enumerate(tiles):
 
-                # Create objects based on character in map file
                 if tile == "1": 
                     Wall(self, col, row)
                 elif tile.upper() == "C":
@@ -130,18 +137,15 @@ class Game:
                 elif tile.upper() == "D":
                     Door(self, col, row)
 
-        # Prevent running the game without placing player
         if self.player is None:
             raise ValueError("Map must have a 'P' tile for the player!")
 
     # ------------------ CHANGE LEVEL ------------------ #
     def change_level(self, new_level, spawn_tile='P'):
-        """Switch to a new map and place player at the spawn tile."""
         self.current_level = new_level
         self.map = Map(path.join(self.game_folder, self.current_level))
-        self.new()  # rebuild the sprites
+        self.new()
 
-        # Place player at spawn tile
         for row, line in enumerate(self.map.data):
             for col, tile in enumerate(line):
                 if tile.upper() == spawn_tile:
@@ -151,14 +155,18 @@ class Game:
 
     # ------------------ MAIN GAME LOOP ------------------ #
     def run(self):
-        self.show_start_screen()  # Show menu before game starts
+        self.show_start_screen()
 
         while self.playing:
-            # dt = frame time → smooth movement
             self.dt = self.clock.tick(FPS) / 1000
 
             self.events()
             self.all_sprites.update()
+
+            # -------- DEATH CHECK --------
+            if self.player.health <= 0:
+                self.show_death_screen()
+
             self.draw()
         pg.quit()
 
@@ -199,12 +207,10 @@ class Game:
         pg.draw.rect(surface, (50, 50, 50), (0, inv_y, WIDTH, inv_height))
         pg.draw.rect(surface, WHITE, (0, inv_y, WIDTH, inv_height), 2)
 
-        # Coin icon + count
         coin_icon = pg.Rect(20, inv_y + 10, 30, 30)
         pg.draw.ellipse(surface, YELLOW, coin_icon)
         self.draw_text(surface, f"x {self.player.coins}", 24, WHITE, coin_icon.right + 10, inv_y + 10)
 
-        # Key icon + count
         key_icon = pg.Rect(150, inv_y + 10, 30, 30)
         pg.draw.rect(surface, (0, 200, 255), key_icon)
         self.draw_text(surface, f"x {1 if self.player.has_key else 0}", 24, WHITE, key_icon.right + 10, inv_y + 10)
@@ -230,7 +236,6 @@ class Game:
                 if tile.upper() == "M": pg.draw.rect(surface, RED, (tile_x, tile_y, 4, 4))
                 if tile.upper() == "D": pg.draw.rect(surface, BLUE, (tile_x, tile_y, 4, 4))
 
-        # Player dot
         p_x = x + self.player.rect.centerx * scale
         p_y = y + self.player.rect.centery * scale
         pg.draw.circle(surface, GREEN, (int(p_x), int(p_y)), 4)
@@ -254,12 +259,10 @@ class Game:
                 if tile.upper() == "M": pg.draw.rect(self.screen, RED, (draw_x, draw_y, 16, 16))
                 if tile.upper() == "D": pg.draw.rect(self.screen, BLUE, (draw_x, draw_y, 16, 16))
 
-        # Player icon
         p_x = self.player.rect.centerx * full_scale
         p_y = self.player.rect.centery * full_scale
         pg.draw.circle(self.screen, GREEN, (int(p_x), int(p_y)), 8)
 
-        # Label
         self.draw_text(self.screen, "FULL MAP — Press M to Close", 36, WHITE, 20, 20)
 
     # ------------------ DRAW EVERYTHING ------------------ #
@@ -276,13 +279,12 @@ class Game:
             self.draw_health_bar(self.screen, 20, bar_y, self.player.health)
             self.draw_stamina_bar(self.screen, 20, bar_y + 25, self.player.stamina)
             self.draw_text(self.screen, f"Coins: {self.player.coins}", 24, BLACK, 300, 20)
+
             if self.player.has_key:
                 self.draw_text(self.screen, "Key Acquired", 24, YELLOW, 500, 20)
 
             self.draw_inventory(self.screen)
 
-        # Mini-map or full map
-        # Used GPT with specific prompt of "How can I create an exact replica mini map which updates towards real-time with my actual map"
         if self.show_full_map:
             self.draw_fullmap()
         else:
@@ -302,4 +304,3 @@ if __name__ == "__main__":
     g.load_data()
     g.new()
     g.run()
-
