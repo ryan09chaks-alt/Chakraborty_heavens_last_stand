@@ -17,7 +17,10 @@ class Game:
         # Tracks if the game loop is running
         self.playing = True
 
+        # Mini-map toggle
+        self.show_full_map = False
 
+    # ------------------ LOAD DATA ------------------ #
     def load_data(self):
         # --- Loads images, map, and sets file paths ---
         self.game_folder = path.dirname(__file__)
@@ -32,41 +35,70 @@ class Game:
         self.bg_img = pg.image.load(path.join(self.img_folder, 'background.png')).convert_alpha()
         self.bg_img = pg.transform.scale(self.bg_img, (WIDTH, HEIGHT))
 
-
-    # ------------------ START MENU ------------------ #
+    # ------------------ START SCREEN ------------------ #
     def show_start_screen(self):
-        """Displays a simple start menu before the game begins."""
+        """Displays the start menu where the player can Start, view Credits, or Quit."""
         waiting = True
-
-        title_font = pg.font.Font(None, 80)
-        text_font = pg.font.Font(None, 40)
+        selected = 0  # Menu index: 0 = Start, 1 = Credits, 2 = Quit
+        options = ["Start Game", "Credits", "Quit"]
 
         while waiting:
-            self.clock.tick(FPS)
+            self.screen.fill((0, 0, 0))
 
-            # Check for user input
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    waiting = False
-                    self.playing = False
-                if event.type == pg.KEYDOWN:
-                    if event.key == pg.K_RETURN:
-                        waiting = False
+            # Title Text
+            self.draw_text(self.screen, "Heaven's Last Stand", 64, WHITE, WIDTH // 2 - 220, HEIGHT // 4)
 
-            # Draw background
-            self.screen.fill((20, 20, 20))
-
-            # Draw title
-            title = title_font.render("Heaven's Last Stand", True, (255, 255, 255))
-            self.screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//3))
-
-            # Draw instruction
-            press_enter = text_font.render("Press ENTER to Start", True, (200, 200, 200))
-            self.screen.blit(press_enter, (WIDTH//2 - press_enter.get_width()//2, HEIGHT//2))
+            # Loop through menu options
+            for i, option in enumerate(options):
+                color = YELLOW if i == selected else WHITE
+                self.draw_text(self.screen, option, 40, color, WIDTH // 2 - 100, HEIGHT // 2 + i * 60)
 
             pg.display.flip()
 
+            # Event handling
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    pg.quit()
+                    quit()
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_UP:
+                        selected = (selected - 1) % len(options)
+                    if event.key == pg.K_DOWN:
+                        selected = (selected + 1) % len(options)
+                    if event.key == pg.K_RETURN:
+                        if selected == 0:   # Start Game
+                            waiting = False
+                        elif selected == 1:  # Credits
+                            self.show_credits_screen()
+                        elif selected == 2:  # Quit
+                            pg.quit()
+                            quit()
 
+    # ------------------ CREDITS SCREEN ------------------ #
+    def show_credits_screen(self):
+        """Displays a simple credits screen and returns to the start menu."""
+        waiting = True
+
+        while waiting:
+            self.screen.fill(BLACK)
+
+            # Credits text
+            self.draw_text(self.screen, "CREDITS", 60, WHITE, WIDTH // 2 - 140, HEIGHT // 4)
+            self.draw_text(self.screen, "Thanks to Ryan C", 40, YELLOW, WIDTH // 2 - 180, HEIGHT // 2)
+
+            # Return instructions
+            self.draw_text(self.screen, "Press any key to return", 30, GREY, WIDTH // 2 - 180, HEIGHT - 100)
+
+            pg.display.flip()
+
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    pg.quit()
+                    quit()
+                if event.type == pg.KEYDOWN:
+                    waiting = False
+
+    # ------------------ NEW LEVEL ------------------ #
     def new(self):
         # --- Create all sprite groups for the level ---
         self.all_sprites = pg.sprite.Group()
@@ -86,17 +118,12 @@ class Game:
                 # Create objects based on character in map file
                 if tile == "1": 
                     Wall(self, col, row)
-
                 elif tile.upper() == "C":
                     Coin(self, col, row)
-
                 elif tile.upper() == "P":
                     self.player = Player(self, col, row)
-
-                # First mob drops the key
                 elif tile.upper() == "M":
                     Mob(self, col, row, drops_key=True if len(self.all_mobs) == 0 else False)
-
                 elif tile.upper() == "D":
                     Door(self, col, row)
 
@@ -104,9 +131,10 @@ class Game:
         if self.player is None:
             raise ValueError("Map must have a 'P' tile for the player!")
 
-
     # ------------------ MAIN GAME LOOP ------------------ #
     def run(self):
+        self.show_start_screen()  # Show menu before game starts
+
         while self.playing:
             # dt = frame time → smooth movement
             self.dt = self.clock.tick(FPS) / 1000
@@ -114,48 +142,42 @@ class Game:
             self.events()
             self.all_sprites.update()
             self.draw()
-
         pg.quit()
 
-
+    # ------------------ EVENTS ------------------ #
     def events(self):
-        # Handles only quitting for now
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.playing = False
-
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_m:
+                    self.show_full_map = not self.show_full_map
 
     # ------------------ HEALTH BAR ------------------ #
     def draw_health_bar(self, surface, x, y, health):
-        """Draws a simple green health bar with white outline."""
         width = 200
         height = 20
         health = max(0, min(health, 100))
         fill = int((health / 100) * width)
 
-        pg.draw.rect(surface, (0, 255, 0), (x, y, fill, height))  # green fill
-        pg.draw.rect(surface, (255, 255, 255), (x, y, width, height), 2)  # outline
-
+        pg.draw.rect(surface, (0, 255, 0), (x, y, fill, height))
+        pg.draw.rect(surface, WHITE, (x, y, width, height), 2)
 
     # ------------------ STAMINA BAR ------------------ #
     def draw_stamina_bar(self, surface, x, y, stamina):
-        """Draws stamina bar next to health."""
         width = 200
         height = 20
         stamina = max(0, min(stamina, 100))
         fill = int((stamina / 100) * width)
 
-        pg.draw.rect(surface, (0, 150, 255), (x, y, fill, height))  # blue fill
-        pg.draw.rect(surface, (255, 255, 255), (x, y, width, height), 2)
-
+        pg.draw.rect(surface, (0, 150, 255), (x, y, fill, height))
+        pg.draw.rect(surface, WHITE, (x, y, width, height), 2)
 
     # ------------------ INVENTORY BAR ------------------ #
     def draw_inventory(self, surface):
-        """Draws coin and key icons at bottom of screen."""
         inv_height = 50
-        inv_y = self.screen.get_height() - inv_height
+        inv_y = HEIGHT - inv_height
 
-        # Background
         pg.draw.rect(surface, (50, 50, 50), (0, inv_y, WIDTH, inv_height))
         pg.draw.rect(surface, WHITE, (0, inv_y, WIDTH, inv_height), 2)
 
@@ -169,41 +191,85 @@ class Game:
         pg.draw.rect(surface, (0, 200, 255), key_icon)
         self.draw_text(surface, f"x {1 if self.player.has_key else 0}", 24, WHITE, key_icon.right + 10, inv_y + 10)
 
+    # ------------------ MINI MAP ------------------ #
+    def draw_minimap(self, surface):
+        scale = 0.15
+        map_w = int(self.map.width * scale)
+        map_h = int(self.map.height * scale)
+        x = WIDTH - map_w - 20
+        y = HEIGHT - 50 - map_h - 10
+
+        pg.draw.rect(surface, (40, 40, 40), (x, y, map_w, map_h))
+        pg.draw.rect(surface, WHITE, (x, y, map_w, map_h), 2)
+
+        for row, line in enumerate(self.map.data):
+            for col, tile in enumerate(line):
+                tile_x = x + col * 32 * scale
+                tile_y = y + row * 32 * scale
+
+                if tile == "1": pg.draw.rect(surface, GREY, (tile_x, tile_y, 4, 4))
+                if tile.upper() == "C": pg.draw.rect(surface, YELLOW, (tile_x, tile_y, 4, 4))
+                if tile.upper() == "M": pg.draw.rect(surface, RED, (tile_x, tile_y, 4, 4))
+                if tile.upper() == "D": pg.draw.rect(surface, BLUE, (tile_x, tile_y, 4, 4))
+
+        # Player dot
+        p_x = x + self.player.rect.centerx * scale
+        p_y = y + self.player.rect.centery * scale
+        pg.draw.circle(surface, GREEN, (int(p_x), int(p_y)), 4)
+
+    # ------------------ FULL MAP ------------------ #
+    def draw_fullmap(self):
+        overlay = pg.Surface((WIDTH, HEIGHT))
+        overlay.fill((10, 10, 10))
+        overlay.set_alpha(230)
+        self.screen.blit(overlay, (0, 0))
+
+        full_scale = min(WIDTH / self.map.width, HEIGHT / self.map.height)
+
+        for row, line in enumerate(self.map.data):
+            for col, tile in enumerate(line):
+                draw_x = col * 32 * full_scale
+                draw_y = row * 32 * full_scale
+
+                if tile == "1": pg.draw.rect(self.screen, GREY, (draw_x, draw_y, 16, 16))
+                if tile.upper() == "C": pg.draw.rect(self.screen, YELLOW, (draw_x, draw_y, 16, 16))
+                if tile.upper() == "M": pg.draw.rect(self.screen, RED, (draw_x, draw_y, 16, 16))
+                if tile.upper() == "D": pg.draw.rect(self.screen, BLUE, (draw_x, draw_y, 16, 16))
+
+        # Player icon
+        p_x = self.player.rect.centerx * full_scale
+        p_y = self.player.rect.centery * full_scale
+        pg.draw.circle(self.screen, GREEN, (int(p_x), int(p_y)), 8)
+
+        # Label
+        self.draw_text(self.screen, "FULL MAP — Press M to Close", 36, WHITE, 20, 20)
 
     # ------------------ DRAW EVERYTHING ------------------ #
     def draw(self):
-        # Background
         self.screen.blit(self.bg_img, (0, 0))
 
-        # Show mob detection radius (for debugging)
         for mob in self.all_mobs:
             mob.draw_radius(self.screen)
 
-        # Draw all objects
         self.all_sprites.draw(self.screen)
 
-        # UI (health, stamina, coins, key)
         if self.player:
-            bar_y = self.screen.get_height() - 70
-
-            # Health
+            bar_y = HEIGHT - 70
             self.draw_health_bar(self.screen, 20, bar_y, self.player.health)
-
-            # Stamina (next to health)
             self.draw_stamina_bar(self.screen, 20, bar_y + 25, self.player.stamina)
-
-            # Additional info
             self.draw_text(self.screen, f"Coins: {self.player.coins}", 24, BLACK, 300, 20)
-
-            # "Key acquired" message
             if self.player.has_key:
                 self.draw_text(self.screen, "Key Acquired", 24, YELLOW, 500, 20)
 
-            # Bottom HUD
             self.draw_inventory(self.screen)
 
-        pg.display.flip()
+        # Mini-map or full map
+        if self.show_full_map:
+            self.draw_fullmap()
+        else:
+            self.draw_minimap(self.screen)
 
+        pg.display.flip()
 
     # ------------------ TEXT HELPER ------------------ #
     def draw_text(self, surface, text, size, color, x, y):
@@ -215,6 +281,5 @@ class Game:
 if __name__ == "__main__":
     g = Game()
     g.load_data()
-    g.show_start_screen()   # Show menu before game begins
     g.new()
     g.run()
