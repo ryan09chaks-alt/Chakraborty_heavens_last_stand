@@ -5,7 +5,7 @@ from settings import *
 from random import randint
 vec = pg.math.Vector2  # convenient alias
 
-# ------------------ PLAYER ------------------ #
+#  PLAYER  #
 class Player(Sprite):
     def __init__(self, game, x, y):
         # register groups
@@ -37,7 +37,7 @@ class Player(Sprite):
         self.last_shot = 0
         self.shot_cooldown = 300  # ms
 
-        # -------- Sprint / Stamina --------
+        #  Sprint / Stamina 
         self.max_stamina = 100.0
         self.stamina = self.max_stamina
         self.sprint_multiplier = 1.7   # times base speed
@@ -49,7 +49,7 @@ class Player(Sprite):
         keys = pg.key.get_pressed()
         move = vec(0, 0)
 
-        # WASD movement input -> movement vector (not scaled by speed yet)
+        # WASD movement input 
         if keys[pg.K_w]:
             move.y = -1
         if keys[pg.K_s]:
@@ -59,7 +59,7 @@ class Player(Sprite):
         if keys[pg.K_d]:
             move.x = 1
 
-        # normalize movement vector for diagonal speed consistency
+        # Allow movement so diagonal speed is maintained
         if move.length_squared() > 0:
             move = move.normalize()
 
@@ -132,7 +132,7 @@ class Player(Sprite):
         # clamp health
         self.health = max(0.0, min(self.health, 100.0))
 
-# ------------------ MOB ------------------ #
+#  MOB  #
 class Mob(Sprite):
     def __init__(self, game, x, y, radius=150, drops_key=False):
         self.groups = game.all_sprites, game.all_mobs
@@ -210,7 +210,7 @@ class Mob(Sprite):
         pg.draw.circle(s, (255,0,0,50), (self.radius,self.radius), self.radius)
         surface.blit(s, (self.rect.centerx - self.radius, self.rect.centery - self.radius))
 
-# ------------------ COIN ------------------ #
+#  COIN  #
 class Coin(Sprite):
     def __init__(self, game, x, y):
         self.groups = game.all_sprites, game.all_coins
@@ -219,7 +219,7 @@ class Coin(Sprite):
         self.image.fill(YELLOW)
         self.rect = self.image.get_rect(topleft=(x*TILESIZE[0], y*TILESIZE[1]))
 
-# ------------------ KEY ------------------ #
+#  KEY  #
 class Key(Sprite):
     def __init__(self, game, x, y):
         self.groups = game.all_sprites, game.all_keys
@@ -228,7 +228,7 @@ class Key(Sprite):
         self.image.fill((0,200,255))
         self.rect = self.image.get_rect(topleft=(x*TILESIZE[0], y*TILESIZE[1]))
 
-# ------------------ DOOR ------------------ #
+#  DOOR  #
 class Door(Sprite):
     def __init__(self, game, x, y, target_level="level2.txt"):  # Add target_level parameter
         self.groups = game.all_sprites, game.all_doors
@@ -237,8 +237,8 @@ class Door(Sprite):
         self.target_level = target_level  # The map this door will load
         self.image = pg.Surface(TILESIZE)
         self.image.fill((139,69,19))
-        
-# ------------------ WALL ------------------ #
+
+#  WALL  #
 class Wall(Sprite):
     def __init__(self, game, x, y):
         self.groups = game.all_sprites, game.all_walls
@@ -247,7 +247,7 @@ class Wall(Sprite):
         self.image.fill(GREY)
         self.rect = self.image.get_rect(topleft=(x*TILESIZE[0], y*TILESIZE[1]))
 
-# ------------------ PROJECTILE ------------------ #
+#  PROJECTILE  #
 class Projectile(Sprite):
     def __init__(self, game, x, y, dir):
         self.groups = game.all_sprites, game.all_projectiles

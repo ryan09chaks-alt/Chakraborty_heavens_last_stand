@@ -9,7 +9,7 @@ class Game:
     def __init__(self):
         pg.init()
 
-        # --- Create the game window and clock ---
+        # Create the game window and clock 
         self.screen = pg.display.set_mode((WIDTH, HEIGHT))
         pg.display.set_caption("Ryan's Game")
         self.clock = pg.time.Clock()
@@ -23,7 +23,7 @@ class Game:
         # Current level file
         self.current_level = "level1.txt"
 
-    # ------------------ LOAD DATA ------------------ #
+    # LOAD DATA #
     def load_data(self):
         self.game_folder = path.dirname(__file__)
         self.img_folder = path.join(self.game_folder, 'images')
@@ -35,7 +35,7 @@ class Game:
         self.bg_img = pg.image.load(path.join(self.img_folder, 'background.png')).convert_alpha()
         self.bg_img = pg.transform.scale(self.bg_img, (WIDTH, HEIGHT))
 
-    # ------------------ START SCREEN ------------------ #
+    # START SCREEN #
     def show_start_screen(self):
         waiting = True
         selected = 0  
@@ -69,7 +69,7 @@ class Game:
                             pg.quit()
                             quit()
 
-    # ------------------ CREDITS SCREEN ------------------ #
+    # CREDITS SCREEN #
     def show_credits_screen(self):
         waiting = True
 
@@ -87,7 +87,7 @@ class Game:
                 if event.type == pg.KEYDOWN:
                     waiting = False
 
-    # ------------------ SIMPLE DEATH SCREEN ------------------ #
+    #  SIMPLE DEATH SCREEN  #
     def show_death_screen(self):
         """Simple black death screen with retry."""
         while True:
@@ -111,7 +111,7 @@ class Game:
                         pg.quit()
                         quit()
 
-    # ------------------ NEW LEVEL ------------------ #
+    #  NEW LEVEL  #
     def new(self):
         self.all_sprites = pg.sprite.Group()
         self.all_mobs = pg.sprite.Group()
@@ -140,7 +140,7 @@ class Game:
         if self.player is None:
             raise ValueError("Map must have a 'P' tile for the player!")
 
-    # ------------------ CHANGE LEVEL ------------------ #
+    #  CHANGE LEVEL  #
     def change_level(self, new_level, spawn_tile='P'):
         self.current_level = new_level
         self.map = Map(path.join(self.game_folder, self.current_level))
@@ -153,7 +153,7 @@ class Game:
                     self.player.pos = pg.math.Vector2(self.player.rect.topleft)
                     return
 
-    # ------------------ MAIN GAME LOOP ------------------ #
+    #  MAIN GAME LOOP  #
     def run(self):
         self.show_start_screen()
 
@@ -163,14 +163,14 @@ class Game:
             self.events()
             self.all_sprites.update()
 
-            # -------- DEATH CHECK --------
+            #  DEATH CHECK 
             if self.player.health <= 0:
                 self.show_death_screen()
 
             self.draw()
         pg.quit()
 
-    # ------------------ EVENTS ------------------ #
+    #  EVENTS  #
     def events(self):
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -179,7 +179,7 @@ class Game:
                 if event.key == pg.K_m:
                     self.show_full_map = not self.show_full_map
 
-    # ------------------ HEALTH BAR ------------------ #
+    #  HEALTH BAR  #
     def draw_health_bar(self, surface, x, y, health):
         width = 200
         height = 20
@@ -189,7 +189,7 @@ class Game:
         pg.draw.rect(surface, (0, 255, 0), (x, y, fill, height))
         pg.draw.rect(surface, WHITE, (x, y, width, height), 2)
 
-    # ------------------ STAMINA BAR ------------------ #
+    #  STAMINA BAR  #
     def draw_stamina_bar(self, surface, x, y, stamina):
         width = 200
         height = 20
@@ -199,7 +199,7 @@ class Game:
         pg.draw.rect(surface, (0, 150, 255), (x, y, fill, height))
         pg.draw.rect(surface, WHITE, (x, y, width, height), 2)
 
-    # ------------------ INVENTORY BAR ------------------ #
+    #  INVENTORY BAR  #
     def draw_inventory(self, surface):
         inv_height = 50
         inv_y = HEIGHT - inv_height
@@ -215,7 +215,7 @@ class Game:
         pg.draw.rect(surface, (0, 200, 255), key_icon)
         self.draw_text(surface, f"x {1 if self.player.has_key else 0}", 24, WHITE, key_icon.right + 10, inv_y + 10)
 
-    # ------------------ MINI MAP ------------------ #
+    #  MINI MAP  #
     def draw_minimap(self, surface):
         scale = 0.15
         map_w = int(self.map.width * scale)
@@ -240,7 +240,7 @@ class Game:
         p_y = y + self.player.rect.centery * scale
         pg.draw.circle(surface, GREEN, (int(p_x), int(p_y)), 4)
 
-    # ------------------ FULL MAP ------------------ #
+    #  FULL MAP  #
     def draw_fullmap(self):
         overlay = pg.Surface((WIDTH, HEIGHT))
         overlay.fill((10, 10, 10))
@@ -265,7 +265,7 @@ class Game:
 
         self.draw_text(self.screen, "FULL MAP — Press M to Close", 36, WHITE, 20, 20)
 
-    # ------------------ DRAW EVERYTHING ------------------ #
+    #  DRAW EVERYTHING  #
     def draw(self):
         self.screen.blit(self.bg_img, (0, 0))
 
@@ -292,13 +292,13 @@ class Game:
 
         pg.display.flip()
 
-    # ------------------ TEXT HELPER ------------------ #
+    #  TEXT HELPER  #
     def draw_text(self, surface, text, size, color, x, y):
         font = pg.font.Font(None, size)
         surface.blit(font.render(text, True, color), (x, y))
 
 
-# ------------------ PROGRAM START ------------------ #
+#  PROGRAM START  #
 if __name__ == "__main__":
     g = Game()
     g.load_data()
