@@ -282,6 +282,7 @@ class Game:
             self.draw_inventory(self.screen)
 
         # Mini-map or full map
+        # Used GPT with specific prompt of "How can I create an exact replica mini map which updates towards real-time with my actual map"
         if self.show_full_map:
             self.draw_fullmap()
         else:
